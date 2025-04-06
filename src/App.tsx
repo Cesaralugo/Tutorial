@@ -3,6 +3,23 @@ import { useAuthenticator } from '@aws-amplify/ui-react';
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import LocationDisplay from "./LocationDisplay";
+import { Amplify } from 'aws-amplify';
+import { fetchAuthSession } from 'aws-amplify/auth';
+import {
+  LocationClient,
+  AssociateTrackerConsumerCommand
+} from '@aws-sdk/client-location';
+import outputs from '../amplify_outputs.json';
+Amplify.configure(outputs);
+
+const createClient = async () => {
+  const session = await fetchAuthSession();
+  const client = new LocationClient({
+    credentials: session.credentials,
+    region: amplifyconfig.aws_project_region
+  });
+  return client;
+};
 
 const client = generateClient<Schema>();
 
