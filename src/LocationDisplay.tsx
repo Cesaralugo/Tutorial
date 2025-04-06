@@ -1,85 +1,71 @@
 import { useState, useEffect } from 'react';
+import { MapView, LocationSearch } from '@aws-amplify/ui-react-geo';
+import { Amplify } from 'aws-amplify';
+import awsconfig from './aws-exports';
+import '@aws-amplify/ui-react-geo/styles.css';
+
+Amplify.configure(awsconfig);
 
 export default function LocationDisplay() {
-  const [location, setLocation] = useState<{
-    lat: number | null;
-    lng: number | null;
-    error: string | null;
-  }>({
-    lat: null,
-    lng: null,
-    error: null
-  });
-
-  // Función para guardar la ubicación en un JSON
-  const saveLocationToFile = (lat: number, lng: number) => {
-    const locationData = {
-      latitude: lat,
-      longitude: lng,
-      timestamp: new Date().toISOString()
-    };
-
-    // Crear el JSON
-    const jsonData = JSON.stringify(locationData, null, 2);
-    
-    // Crear un blob (archivo descargable)
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    // Crear un enlace temporal para descargar
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ubicacion_${Date.now()}.json`;
-    a.click();
-    
-    // Limpiar
-    URL.revokeObjectURL(url);
-  };
+  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocation(prev => ({ ...prev, error: "Geolocation is not supported" }));
+      setError("Geolocation no está soportada en tu navegador");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-
-        const { latitude, longitude } = position.coords;
-
-        setLocation({
-          lat: latitude,
-          lng: longitude,
-          error: null
+        setCoordinates({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
         });
-        saveLocationToFile(latitude, longitude); // Guardar automáticamente
       },
-      (error) => {
-        setLocation(prev => ({ ...prev, error: error.message }));
+      (err) => {
+        setError(`Error al obtener ubicación: ${err.message}`);
       }
     );
   }, []);
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <h2>Device Location</h2>
-      {location.error ? (
-        <p style={{ color: 'red' }}>Error: {location.error}</p>
-      ) : location.lat ? (
-        <div>
-          <p>Latitude: {location.lat.toFixed(6)}</p>
-          <p>Longitude: {location.lng?.toFixed(6)}</p>
-          <a
-            href={`https://www.google.com/maps?q=${location.lat},${location.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on Google Maps
-          </a>
-        </div>
-      ) : (
-        <p>Loading location...</p>
-      )}
+    <div style={{ height: '100vh', width: '100%' }}>
+      <h2>Mi Ubicación Actual</h2>
+      
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      
+      <div style={{ height: '500px', marginTop: '1rem' }}>
+        <MapView 
+          initialViewState={{
+            latitude: coordinates?.lat || 0,
+            longitude: coordinates?.lng || 0,
+            zoom: coordinates ? 14 : 2
+          }}
+        >
+          {coordinates && (
+            <Marker 
+              latitude={coordinates.lat}
+              longitude={coordinates.lng}
+              anchor="bottom"
+            >
+              <div style={{ color: 'red', fontSize: '24px' }}>📍</div>
+            </Marker>
+          )}
+        </MapView>
+      </div>
+
+      <div style={{ marginTop: '2rem' }}>
+        <h3>Buscar ubicación</h3>
+        <LocationSearch 
+          onSelect={(result) => {
+            setCoordinates({
+              lat: result.geometry.y,
+              lng: result.geometry.x
+            });
+          }}
+        />
+      </div>
     </div>
   );
 }
