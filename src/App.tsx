@@ -3,25 +3,10 @@ import { useAuthenticator } from '@aws-amplify/ui-react';
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import LocationDisplay from "./LocationDisplay";
-import { Amplify } from 'aws-amplify';
-import { fetchAuthSession } from 'aws-amplify/auth';
-import {
-  LocationClient,
-  AssociateTrackerConsumerCommand,
-  BatchUpdateDevicePositionCommand
-} from '@aws-sdk/client-location';
-import outputs from '../amplify_outputs.json';
-import amplifyconfig from './aws-exports';
-Amplify.configure(outputs);
 
-const createClient = async () => {
-  const session = await fetchAuthSession();
-  const client = new LocationClient({
-    credentials: session.credentials,
-    region: amplifyconfig.aws_project_region
-  });
-  return client;
-};
+import { LocationClient, BatchUpdateDevicePositionCommand } from "@aws-sdk/client-location";
+import { fetchAuthSession } from "aws-amplify";
+import amplifyconfig from "./aws-exports";
 
 const client = generateClient<Schema>();
 
@@ -46,21 +31,28 @@ function App() {
   }
 
   // UpdateDevicePosition API
-  const params = {
-    TrackerName: 'trackerId',
-    Updates: [
-      {
-        DeviceId: 'deviceId',
-        Position: [-122.431297, 37.773972],
-        SampleTime: new Date()
-      }
-    ]
+  const sendBatchUpdate = async () => {
+    const session = await fetchAuthSession();
+  
+    const client = new LocationClient({
+      credentials: session.credentials,
+      region: amplifyconfig.aws_project_region
+    });
+  
+    const command = new BatchUpdateDevicePositionCommand({
+      TrackerName: "ToroidalTracker",
+      Updates: [
+        {
+          DeviceId: "device-1",
+          Position: [-73.935242, 40.730610],
+          SampleTime: new Date().toISOString(),
+        }
+      ]
+    });
+  
+    const response = await client.send(command);
+    console.log("Respuesta:", response);
   };
-  const command = new BatchUpdateDevicePositionCommand(params);
-  client.send(command, (err, data) => {
-    if (err) console.error(err);
-    if (data) console.log(data);
-  });
   
   return (
     <main>
