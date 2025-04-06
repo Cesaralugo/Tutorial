@@ -74,7 +74,7 @@ function App() {
       </ul>
       <div>
         <h2>Location</h2>
-        <LocationDisplay />
+        <LocationDisplay/>
       </div>
       <div>
         🥳 App successfully hosted. Try creating a new todo.
