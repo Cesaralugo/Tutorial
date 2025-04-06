@@ -43,50 +43,59 @@ function App() {
     client.models.Todo.delete({ id })
   }
 
+    // UpdateDevicePosition API
+  const params = {
+    TrackerName: 'trackerId',
+    Updates: [
+      {
+        DeviceId: 'deviceId',
+        Position: [-122.431297, 37.773972],
+        SampleTime: new Date()
+      }
+    ]
+  };
+  const command = new BatchUpdateDevicePositionCommand(params);
+  client.send(command, (err, data) => {
+    if (err) console.error(err);
+    if (data) console.log(data);
+  });
+  
+  // GetDevicePosition API
+  const client = await createClient();
+  const params = {
+    TrackerName: 'trackerId',
+    DeviceId: 'deviceId'
+  };
+  const command = new GetDevicePositionCommand(params);
+  client.send(command, (err, data) => {
+    if (err) console.error(err);
+    if (data) console.log(data);
+  });
+  
   return (
     <main>
-
- 
-
       <h1>{user?.signInDetails?.loginId}'s todos</h1>
- 
       <h1>My todos</h1>
- 
       <button onClick={createTodo}>+ new</button>
- 
       <ul>
- 
         {todos.map((todo) => (
- 
           <li
- 
             onClick={() => deleteTodo(todo.id)}
- 
             key={todo.id}>{todo.content}</li>
- 
         ))}
- 
       </ul>
       <div>
         <h2>Location</h2>
         <LocationDisplay />
       </div>
       <div>
- 
         🥳 App successfully hosted. Try creating a new todo.
- 
         <br />
- 
         <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
- 
           Review next step of this tutorial.
- 
         </a>
- 
       </div>
- 
       <button onClick={signOut}>Sign out</button>
- 
     </main>
   );
 }
