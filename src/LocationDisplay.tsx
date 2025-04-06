@@ -11,6 +11,31 @@ export default function LocationDisplay() {
     error: null
   });
 
+  // Función para guardar la ubicación en un JSON
+  const saveLocationToFile = (lat: number, lng: number) => {
+    const locationData = {
+      latitude: lat,
+      longitude: lng,
+      timestamp: new Date().toISOString()
+    };
+
+    // Crear el JSON
+    const jsonData = JSON.stringify(locationData, null, 2);
+    
+    // Crear un blob (archivo descargable)
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Crear un enlace temporal para descargar
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ubicacion_${Date.now()}.json`;
+    a.click();
+    
+    // Limpiar
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocation(prev => ({ ...prev, error: "Geolocation is not supported" }));
@@ -19,12 +44,15 @@ export default function LocationDisplay() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log(position.toJSON());
+
+        const { latitude, longitude } = position.coords;
+
         setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lat: latitude,
+          lng: longitude,
           error: null
         });
+        saveLocationToFile(latitude, longitude); // Guardar automáticamente
       },
       (error) => {
         setLocation(prev => ({ ...prev, error: error.message }));
