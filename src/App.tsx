@@ -10,6 +10,7 @@ import {
   AssociateTrackerConsumerCommand
 } from '@aws-sdk/client-location';
 import outputs from '../amplify_outputs.json';
+import amplifyconfig from './aws-exports';
 Amplify.configure(outputs);
 
 const createClient = async () => {
