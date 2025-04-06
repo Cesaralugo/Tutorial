@@ -19,12 +19,12 @@ export default function LocationDisplay() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        position.toJSON();
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           error: null
         });
-        position.toJSON();
       },
       (error) => {
         setLocation(prev => ({ ...prev, error: error.message }));
