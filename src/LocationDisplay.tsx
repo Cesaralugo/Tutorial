@@ -44,7 +44,9 @@ export default function LocationDisplay() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+
         const { latitude, longitude } = position.coords;
+
         setLocation({
           lat: latitude,
           lng: longitude,
