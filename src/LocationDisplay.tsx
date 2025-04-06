@@ -1,71 +1,106 @@
 import { useState, useEffect } from 'react';
-import { MapView, LocationSearch } from '@aws-amplify/ui-react-geo';
-import { Amplify } from 'aws-amplify';
-import awsconfig from './aws-exports';
+import { AmazonLocationServiceProvider } from '@aws-amplify/geo';
+import { MapView, Marker } from '@aws-amplify/ui-react-geo';
+import { Alert, Loader } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react-geo/styles.css';
 
-Amplify.configure(awsconfig);
+const locationService = new AmazonLocationServiceProvider();
 
-export default function LocationDisplay() {
-  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
-  const [error, setError] = useState<string | null>(null);
+interface LocationDisplayProps {
+  user: {
+    username?: string;
+    signInDetails?: {
+      loginId?: string;
+    };
+  };
+}
+
+export default function LocationDisplay({ user }: LocationDisplayProps) {
+  const [location, setLocation] = useState<{
+    lat: number | null;
+    lng: number | null;
+    error: string | null;
+  }>({
+    lat: null,
+    lng: null,
+    error: null
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Función para guardar en Amazon Location Service
+  const saveToAmazonLocation = async (lat: number, lng: number) => {
+    if (!user?.username) return;
+    
+    setIsSaving(true);
+    try {
+      await locationService.saveDevicePosition({
+        deviceId: user.username,
+        position: [lng, lat],
+        sampleTime: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error saving to Amazon Location:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError("Geolocation no está soportada en tu navegador");
+      setLocation(prev => ({ ...prev, error: "Geolocation no soportada" }));
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCoordinates({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+        const { latitude, longitude } = position.coords;
+        setLocation({
+          lat: latitude,
+          lng: longitude,
+          error: null
         });
+        saveToAmazonLocation(latitude, longitude);
       },
-      (err) => {
-        setError(`Error al obtener ubicación: ${err.message}`);
+      (error) => {
+        setLocation(prev => ({ ...prev, error: error.message }));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       }
     );
-  }, []);
+  }, [user]);
 
   return (
-    <div style={{ height: '100vh', width: '100%' }}>
-      <h2>Mi Ubicación Actual</h2>
-      
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      <div style={{ height: '500px', marginTop: '1rem' }}>
-        <MapView 
-          initialViewState={{
-            latitude: coordinates?.lat || 0,
-            longitude: coordinates?.lng || 0,
-            zoom: coordinates ? 14 : 2
-          }}
-        >
-          {coordinates && (
-            <Marker 
-              latitude={coordinates.lat}
-              longitude={coordinates.lng}
-              anchor="bottom"
+    <div style={{ padding: '1rem' }}>
+      {location.error ? (
+        <Alert variation="error">{location.error}</Alert>
+      ) : location.lat ? (
+        <div>
+          <div style={{ height: '400px', margin: '10px 0' }}>
+            <MapView 
+              initialViewState={{
+                latitude: location.lat,
+                longitude: location.lng,
+                zoom: 14
+              }}
             >
-              <div style={{ color: 'red', fontSize: '24px' }}>📍</div>
-            </Marker>
-          )}
-        </MapView>
-      </div>
-
-      <div style={{ marginTop: '2rem' }}>
-        <h3>Buscar ubicación</h3>
-        <LocationSearch 
-          onSelect={(result) => {
-            setCoordinates({
-              lat: result.geometry.y,
-              lng: result.geometry.x
-            });
-          }}
-        />
-      </div>
+              <Marker 
+                latitude={location.lat}
+                longitude={location.lng}
+              >
+                <div style={{ color: 'red', fontSize: '24px' }}>📍</div>
+              </Marker>
+            </MapView>
+          </div>
+          <p>Latitud: {location.lat.toFixed(6)}</p>
+          <p>Longitud: {location.lng?.toFixed(6)}</p>
+          {isSaving && <Loader size="small" />}
+        </div>
+      ) : (
+        <Loader size="large" />
+      )}
     </div>
   );
 }
