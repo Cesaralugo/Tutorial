@@ -60,18 +60,6 @@ function App() {
     if (data) console.log(data);
   });
   
-  // GetDevicePosition API
-  const client = await createClient();
-  const params = {
-    TrackerName: 'ToroidalTracker',
-    DeviceId: 'MyDevice'
-  };
-  const command = new GetDevicePositionCommand(params);
-  client.send(command, (err, data) => {
-    if (err) console.error(err);
-    if (data) console.log(data);
-  });
-  
   return (
     <main>
       <h1>{user?.signInDetails?.loginId}'s todos</h1>
