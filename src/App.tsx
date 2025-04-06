@@ -48,7 +48,7 @@ function App() {
     TrackerName: 'ToroidalTracker',
     Updates: [
       {
-        DeviceId: 'deviceId',
+        DeviceId: 'MyDevice',
         Position: [-122.431297, 37.773972],
         SampleTime: new Date()
       }
@@ -64,7 +64,7 @@ function App() {
   const client = await createClient();
   const params = {
     TrackerName: 'ToroidalTracker',
-    DeviceId: 'deviceId'
+    DeviceId: 'MyDevice'
   };
   const command = new GetDevicePositionCommand(params);
   client.send(command, (err, data) => {
