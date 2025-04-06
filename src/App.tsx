@@ -73,5 +73,16 @@ function App() {
     </main>
   );
 }
+import LocationDisplay from './LocationDisplay';
+
+function App() {
+  return (
+    <div>
+      <LocationDisplay />
+    </div>
+  );
+}
+
+export default App;
 
 export default App;
