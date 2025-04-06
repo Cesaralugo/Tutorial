@@ -1,22 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Amplify, Storage } from 'aws-amplify';
-import { Alert, Loader } from '@aws-amplify/ui-react';
-import awsconfig from './aws-exports';
 
-Amplify.configure(awsconfig);
-
-interface UserData {
-  username?: string;
-  signInDetails?: {
-    loginId?: string;
-  };
-}
-
-interface LocationDisplayProps {
-  user: UserData;
-}
-
-export default function LocationDisplay({ user }: LocationDisplayProps) {
+export default function LocationDisplay() {
   const [location, setLocation] = useState<{
     lat: number | null;
     lng: number | null;
@@ -26,40 +10,35 @@ export default function LocationDisplay({ user }: LocationDisplayProps) {
     lng: null,
     error: null
   });
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
 
-  const saveToS3 = async (lat: number, lng: number) => {
-    if (!user?.username) return;
+  // Función para guardar la ubicación en un JSON
+  const saveLocationToFile = (lat: number, lng: number) => {
+    const locationData = {
+      latitude: lat,
+      longitude: lng,
+      timestamp: new Date().toISOString()
+    };
+
+    // Crear el JSON
+    const jsonData = JSON.stringify(locationData, null, 2);
     
-    setIsUploading(true);
-    setUploadStatus('Guardando en S3...');
-
-    try {
-      const locationData = {
-        lat,
-        lng,
-        timestamp: new Date().toISOString(),
-        userId: user.username || user.signInDetails?.loginId
-      };
-
-      const fileName = `ubicaciones/${user.username}/${Date.now()}.json`;
-      await Storage.put(fileName, JSON.stringify(locationData), {
-        contentType: 'application/json',
-        level: 'private'
-      });
-      setUploadStatus('Ubicación guardada exitosamente');
-    } catch (error) {
-      console.error('Error al guardar en S3:', error);
-      setUploadStatus('Error al guardar');
-    } finally {
-      setIsUploading(false);
-    }
+    // Crear un blob (archivo descargable)
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Crear un enlace temporal para descargar
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ubicacion_${Date.now()}.json`;
+    a.click();
+    
+    // Limpiar
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocation(prev => ({ ...prev, error: "Geolocation no soportada" }));
+      setLocation(prev => ({ ...prev, error: "Geolocation is not supported" }));
       return;
     }
 
@@ -71,41 +50,34 @@ export default function LocationDisplay({ user }: LocationDisplayProps) {
           lng: longitude,
           error: null
         });
-        saveToS3(latitude, longitude);
+        saveLocationToFile(latitude, longitude); // Guardar automáticamente
       },
       (error) => {
         setLocation(prev => ({ ...prev, error: error.message }));
       }
     );
-  }, [user]);
+  }, []);
 
   return (
     <div style={{ padding: '1rem' }}>
-      <h2>Tu Ubicación Actual</h2>
-      
+      <h2>Device Location</h2>
       {location.error ? (
-        <Alert variation="error">{location.error}</Alert>
+        <p style={{ color: 'red' }}>Error: {location.error}</p>
       ) : location.lat ? (
         <div>
-          <p>Latitud: {location.lat.toFixed(6)}</p>
-          <p>Longitud: {location.lng?.toFixed(6)}</p>
+          <p>Latitude: {location.lat.toFixed(6)}</p>
+          <p>Longitude: {location.lng?.toFixed(6)}</p>
           <a
             href={`https://www.google.com/maps?q=${location.lat},${location.lng}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            Ver en Google Maps
+            View on Google Maps
           </a>
         </div>
       ) : (
-        <p>Obteniendo ubicación...</p>
+        <p>Loading location...</p>
       )}
-
-      {isUploading && <p>{uploadStatus}</p>}
-    </div>
-  );
-}
-      {isUploading && <p>{uploadStatus}</p>}
     </div>
   );
 }
