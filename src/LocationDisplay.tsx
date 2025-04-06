@@ -54,3 +54,4 @@ export default function LocationDisplay() {
     </div>
   );
 }
+Actualizar texto en LocationDisplay
