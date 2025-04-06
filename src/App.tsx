@@ -7,7 +7,8 @@ import { Amplify } from 'aws-amplify';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import {
   LocationClient,
-  AssociateTrackerConsumerCommand
+  AssociateTrackerConsumerCommand,
+  BatchUpdateDevicePositionCommand
 } from '@aws-sdk/client-location';
 import outputs from '../amplify_outputs.json';
 import amplifyconfig from './aws-exports';
