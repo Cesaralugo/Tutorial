@@ -4,6 +4,7 @@ import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import LocationDisplay from "./LocationDisplay";
 
+import { fetchAuthSession } from 'aws-amplify/auth';
 import { LocationClient, BatchUpdateDevicePositionCommand } from "@aws-sdk/client-location";
 import { fetchAuthSession } from "aws-amplify";
 import amplifyconfig from "./aws-exports";
