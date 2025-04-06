@@ -45,7 +45,7 @@ function App() {
         {
           DeviceId: "device-1",
           Position: [-73.935242, 40.730610],
-          SampleTime: new Date().toISOString(),
+          SampleTime: new Date(),
         }
       ]
     });
