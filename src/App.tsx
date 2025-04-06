@@ -53,6 +53,8 @@ function App() {
     const response = await client.send(command);
     console.log("Respuesta:", response);
   };
+
+  sendBatchUpdate();
   
   return (
     <main>
