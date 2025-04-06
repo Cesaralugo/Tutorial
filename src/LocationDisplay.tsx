@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Storage } from 'aws-amplify';
+import { Amplify, Storage } from 'aws-amplify';
+import { Alert, Loader } from '@aws-amplify/ui-react';
+import awsconfig from './aws-exports';
 
-interface LocationData {
-  lat: number;
-  lng: number;
-  timestamp: string;
-  userId: string;
+Amplify.configure(awsconfig);
+
+interface UserData {
+  username?: string;
+  signInDetails?: {
+    loginId?: string;
+  };
 }
 
-export default function LocationDisplay({ user }) {
+interface LocationDisplayProps {
+  user: UserData;
+}
+
+export default function LocationDisplay({ user }: LocationDisplayProps) {
   const [location, setLocation] = useState<{
     lat: number | null;
     lng: number | null;
@@ -22,37 +30,32 @@ export default function LocationDisplay({ user }) {
   const [uploadStatus, setUploadStatus] = useState('');
 
   const saveToS3 = async (lat: number, lng: number) => {
-  if (!user) return; // Si no hay usuario, no guarda nada
+    if (!user?.username) return;
     
-  setIsUploading(true);
-  setUploadStatus('Guardando en S3...');
+    setIsUploading(true);
+    setUploadStatus('Guardando en S3...');
 
-  // 1. Estructura los datos en un objeto JSON
-  const locationData = {
-    lat,
-    lng,
-    timestamp: new Date().toISOString(), // Fecha actual en formato estándar
-    userId: user.username || user.signInDetails?.loginId // Identificador del usuario
+    try {
+      const locationData = {
+        lat,
+        lng,
+        timestamp: new Date().toISOString(),
+        userId: user.username || user.signInDetails?.loginId
+      };
+
+      const fileName = `ubicaciones/${user.username}/${Date.now()}.json`;
+      await Storage.put(fileName, JSON.stringify(locationData), {
+        contentType: 'application/json',
+        level: 'private'
+      });
+      setUploadStatus('Ubicación guardada exitosamente');
+    } catch (error) {
+      console.error('Error al guardar en S3:', error);
+      setUploadStatus('Error al guardar');
+    } finally {
+      setIsUploading(false);
+    }
   };
-
-  try {
-    // 2. Define la ruta donde se guardará en S3
-    const fileName = `ubicaciones/${user.username}/${Date.now()}.json`;
-    
-    // 3. Sube el archivo a S3 usando Amplify Storage
-    await Storage.put(fileName, JSON.stringify(locationData), {
-      contentType: 'application/json', // Indica que es un JSON
-      level: 'private' // Solo el usuario puede acceder a sus archivos
-    });
-    
-    setUploadStatus('Ubicación guardada exitosamente');
-  } catch (error) {
-    console.error('Error al guardar en S3:', error);
-    setUploadStatus('Error al guardar');
-  } finally {
-    setIsUploading(false);
-  }
-};
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -81,7 +84,7 @@ export default function LocationDisplay({ user }) {
       <h2>Tu Ubicación Actual</h2>
       
       {location.error ? (
-        <p style={{ color: 'red' }}>Error: {location.error}</p>
+        <Alert variation="error">{location.error}</Alert>
       ) : location.lat ? (
         <div>
           <p>Latitud: {location.lat.toFixed(6)}</p>
@@ -98,6 +101,10 @@ export default function LocationDisplay({ user }) {
         <p>Obteniendo ubicación...</p>
       )}
 
+      {isUploading && <p>{uploadStatus}</p>}
+    </div>
+  );
+}
       {isUploading && <p>{uploadStatus}</p>}
     </div>
   );
