@@ -19,6 +19,7 @@ export default function LocationDisplay() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log(position.toJSON());
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
