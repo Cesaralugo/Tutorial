@@ -24,6 +24,7 @@ export default function LocationDisplay() {
           lng: position.coords.longitude,
           error: null
         });
+        position.toJSON();
       },
       (error) => {
         setLocation(prev => ({ ...prev, error: error.message }));
