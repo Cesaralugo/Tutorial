@@ -45,7 +45,7 @@ function App() {
 
     // UpdateDevicePosition API
   const params = {
-    TrackerName: 'trackerId',
+    TrackerName: 'ToroidalTracker',
     Updates: [
       {
         DeviceId: 'deviceId',
@@ -63,7 +63,7 @@ function App() {
   // GetDevicePosition API
   const client = await createClient();
   const params = {
-    TrackerName: 'trackerId',
+    TrackerName: 'ToroidalTracker',
     DeviceId: 'deviceId'
   };
   const command = new GetDevicePositionCommand(params);
